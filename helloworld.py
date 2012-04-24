@@ -62,8 +62,12 @@ class MainPage(webapp2.RequestHandler):
                       month = cgi.escape(user_month, quote=True),
                       year = cgi.escape(user_year, quote=True))
     else:
+      self.redirect("/thanks")
+
+class ThanksHandler(webapp2.RequestHandler):
+  def get(self):
       self.response.out.write("Thanks! Thats valid")
 
-app = webapp2.WSGIApplication([('/', MainPage)], debug=True)
+app = webapp2.WSGIApplication([('/', MainPage), ('/thanks', ThanksHandler)], debug=True)
 
 
