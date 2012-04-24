@@ -1,4 +1,5 @@
 import webapp2
+import cgi
 
 form = """
 <form method = "post">
@@ -57,9 +58,9 @@ class MainPage(webapp2.RequestHandler):
 
     if not(day and month and year):
       self.write_form(error="Invalid data! Please re-enter",
-                      day = user_day, 
-                      month = user_month,
-                      year = user_year)
+                      day = cgi.escape(user_day, quote=True), 
+                      month = cgi.escape(user_month, quote=True),
+                      year = cgi.escape(user_year, quote=True))
     else:
       self.response.out.write("Thanks! Thats valid")
 
