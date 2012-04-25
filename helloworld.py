@@ -41,12 +41,11 @@ header = """
             <span class="i-bar"></span>
             <span class="i-bar"></span>
           </a>
-          <a class="brand" href="#">Udacity-CS253</a>
+          <a class="brand" href="/">Udacity-CS253</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Signup</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li class="active"><a href="/unit2/signup">Signup</a></li>
+              <li><a href="/unit2/rot13">Rot13</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -64,23 +63,46 @@ footer = """
 
 signup_form = """
 <form method="post">
-    <label>Username
-        <input type="text" name="username" value=%(user_username)s>
-    </label>
-    <label>Password
-        <input type="password" name="password" value=%(user_password)s>
-    </label>
-    <label>Verify Password
-        <input type="password" name="verify" value=%(user_verify)s>
-    </label>
-    <label>Email(Optional)
-        <input type="text" name="email" value=%(user_email)s>
-    </label>
+    <div class="control-group">
+        <label class="control-label">Username</label>
+            <div class="controls">
+                <input type="text" name="username" value=%(user_username)s>
+                <span class="help-inline error">%(error_username)s</span>
+            </div>
+    </div>
+    
+    <div class="control-group">
+        <label class="control-label">Password</label>
+            <div class="controls">
+                <input type="password" name="password" value=%(user_password)s>
+                <span class="help-inline error">%(error_password)s</span>
+            </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">Verify Password</label>
+            <div class="controls">
+                <input type="password" name="verify" value=%(user_verify)s>
+                <span class="help-inline error">%(error_verify)s</span>
+            </div>
+    </div>
+
+    <div class="control-group ">
+        <label class="control-label">Email (Optional)</label>
+            <div class="controls">
+                <input type="text" name="email" value=%(user_email)s>
+                <span class="help-inline error">%(error_email)s</span>
+            </div>
+    </div>
+
     <div class="actions">
         <button type="submit" class="btn primary">Signup!</button>
     </div>
 </form>
 """
+
+def escape_html(s):
+    return cgi.escape(s, quote=True)
 
 def valid_month(month):
       months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -126,9 +148,9 @@ class MainPage(webapp2.RequestHandler):
 
     if not(day and month and year):
       self.write_form(error="Invalid data! Please re-enter",
-                      day = cgi.escape(user_day, quote=True), 
-                      month = cgi.escape(user_month, quote=True),
-                      year = cgi.escape(user_year, quote=True))
+                      day = escape_html(user_day),
+                      month = escape_html(user_month),
+                      year = escape_html(user_year))
     else:
       self.redirect("/thanks")
 
@@ -144,7 +166,7 @@ class RotHandler(webapp2.RequestHandler):
     def post(self):
         user_string = self.request.get("text")
         converted_string = self.rot13(user_string) 
-        self.response.out.write(rot_form % {"placeholder" : converted_string})
+        self.response.out.write(rot_form % {"placeholder" : escape_html(converted_string)})
 
     def rot13(self, s):
         alphabets = string.ascii_lowercase
@@ -183,14 +205,18 @@ class SignupHandler(webapp2.RequestHandler):
         else:
             return False
 
-    def valid_password(self, password, verify):
-        if password != verify:
-            return False
+    def valid_password(self, password):
         PASS_RE = re.compile(r"^.{3,20}$")
         if PASS_RE.match(password):
             return True
         else:
             return False
+
+    def valid_verify(self, password, verify):
+        if password != verify:
+            return False
+        else:
+            return True
 
     def valid_email(self, email):
         if email == "":
@@ -201,11 +227,15 @@ class SignupHandler(webapp2.RequestHandler):
         else:
             return False
 
-    def write_form(self, username="", password="", verify="", email=""):
-        self.response.out.write(signup_form % {"user_username" : "", 
-                                               "user_password" : "",
-                                               "user_verify" : "",
-                                               "user_email" : ""})
+    def write_form(self, username="", password="", verify="", email="", error_username="", error_password="", error_email="", error_verify=""):
+        self.response.out.write(signup_form % {"user_username" : username, #TODO: ESCAPE HTML
+                                               "user_password" : password,
+                                               "user_verify" : verify,  
+                                               "user_email" : email,
+                                               "error_username" : error_username,
+                                               "error_password" : error_password,
+                                               "error_verify" : error_verify, 
+                                               "error_email" : error_email})
     def get(self):
         self.response.out.write(header)
         self.write_form()
@@ -218,8 +248,14 @@ class SignupHandler(webapp2.RequestHandler):
         user_email = self.request.get('email')
         
         check_username = self.valid_username(user_username)
-        check_password = self.valid_password(user_verify, user_password)
+        check_password = self.valid_password(user_password)
+        check_verify = self.valid_verify(user_verify, user_password)
         check_email = self.valid_email(user_email)
+
+        error_username = ""
+        error_password = ""
+        error_verify = ""
+        error_email = ""
 
         if not(check_username and check_password and check_email):
             # self.write_form(error="Invalid data! Please re-enter",
@@ -227,11 +263,22 @@ class SignupHandler(webapp2.RequestHandler):
             #               month = cgi.escape(user_month, quote=True),
             #               year = cgi.escape(user_year, quote=True))
             self.response.out.write(header)
-            self.write_form()
+            if not(check_username):
+                error_username = "This is not a valid username."
+            if not(check_password):
+                error_password = "That wasn't a valid password."
+            if not(check_verify):
+                error_verify = "Your passwords didn't match."
+            if not(check_email):
+                error_email = "That's not a valid email."
+
+            # def write_form(self, username="", password="", verify="", email="", error_username="", error_password="", error_email="", error_verify=""):
+            self.write_form(username = escape_html(user_username), email=escape_html(user_email), error_username=error_username, error_password=error_password, 
+                                                                        error_verify=error_verify, error_email=error_email)
             self.response.out.write(footer)
             # self.response.out.write("invalid!")
         else:
-            self.redirect("/unit2/welcome?username=" + user_username)
+            self.redirect("/unit2/welcome?username=" + escape_html(user_username))
 
 
 class WelcomeHandler(webapp2.RequestHandler):
