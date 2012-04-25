@@ -63,7 +63,7 @@ footer = """
 """
 
 signup_form = """
-<form action="/welcome" method="post">
+<form method="post">
     <label>Username
         <input type="text" name="username" value=%(user_username)s>
     </label>
@@ -175,19 +175,74 @@ class RotHandler(webapp2.RequestHandler):
         return "".join(output)
 
 class SignupHandler(webapp2.RequestHandler):
-    def get(self):
-        self.response.out.write(header)
-        self.write_form()
-        self.response.out.write(footer)
+
+    def valid_username(self, username):
+        USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+        if USER_RE.match(username):
+            return True
+        else:
+            return False
+
+    def valid_password(self, password, verify):
+        if password != verify:
+            return False
+        PASS_RE = re.compile(r"^.{3,20}$")
+        if PASS_RE.match(password):
+            return True
+        else:
+            return False
+
+    def valid_email(self, email):
+        if email == "":
+            return True
+        EMAIL_RE = re.compile(r"^[\S]+@[\S]+\.[\S]+$")
+        if EMAIL_RE.match(email):
+            return True
+        else:
+            return False
 
     def write_form(self, username="", password="", verify="", email=""):
         self.response.out.write(signup_form % {"user_username" : "", 
                                                "user_password" : "",
                                                "user_verify" : "",
                                                "user_email" : ""})
+    def get(self):
+        self.response.out.write(header)
+        self.write_form()
+        self.response.out.write(footer)
 
-app = webapp2.WSGIApplication([('/', MainPage), ('/thanks', ThanksHandler),
+    def post(self):
+        user_username = self.request.get('username')
+        user_password = self.request.get('password')
+        user_verify = self.request.get('verify')
+        user_email = self.request.get('email')
+        
+        check_username = self.valid_username(user_username)
+        check_password = self.valid_password(user_verify, user_password)
+        check_email = self.valid_email(user_email)
+
+        if not(check_username and check_password and check_email):
+            # self.write_form(error="Invalid data! Please re-enter",
+            #               day = cgi.escape(user_day, quote=True), 
+            #               month = cgi.escape(user_month, quote=True),
+            #               year = cgi.escape(user_year, quote=True))
+            self.response.out.write(header)
+            self.write_form()
+            self.response.out.write(footer)
+            # self.response.out.write("invalid!")
+        else:
+            self.redirect("/unit2/welcome?username=" + user_username)
+
+
+class WelcomeHandler(webapp2.RequestHandler):
+    def get(self):
+        username = self.request.get("username")
+        self.response.out.write("<h1>Welcome, " + username + "</h1>")
+
+app = webapp2.WSGIApplication([('/', MainPage), 
+                               ('/thanks', ThanksHandler),
                                ('/unit2/rot13', RotHandler),
-                               ('/unit2/signup', SignupHandler)], debug=True)
+                               ('/unit2/signup', SignupHandler),
+                               ('/unit2/welcome', WelcomeHandler)], debug=True)
 
 
