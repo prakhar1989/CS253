@@ -1,6 +1,7 @@
 import webapp2
 import cgi
 import string
+import re
 
 form = """
 <form method = "post">
@@ -21,13 +22,73 @@ rot_form = """
 </form>
 """
 
+header = """
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Sign Up</title>
+    <link type="text/css" rel="stylesheet" href="/stylesheets/bootstrap.css" />
+    <style>
+        body { margin-top: 60px }
+    </style>
+</head>
+<body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="i-bar"></span>
+            <span class="i-bar"></span>
+            <span class="i-bar"></span>
+          </a>
+          <a class="brand" href="#">Udacity-CS253</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Signup</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+"""
+
+footer = """
+    </div>
+</body>
+</html>
+"""
+
+signup_form = """
+<form action="/welcome" method="post">
+    <label>Username
+        <input type="text" name="username" value=%(user_username)s>
+    </label>
+    <label>Password
+        <input type="password" name="password" value=%(user_password)s>
+    </label>
+    <label>Verify Password
+        <input type="password" name="verify" value=%(user_verify)s>
+    </label>
+    <label>Email(Optional)
+        <input type="text" name="email" value=%(user_email)s>
+    </label>
+    <div class="actions">
+        <button type="submit" class="btn primary">Signup!</button>
+    </div>
+</form>
+"""
+
 def valid_month(month):
-  months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-            'August', 'September', 'October', 'November', 'December']
-  if month.capitalize() in months:
-      return month.capitalize()
-  else:
-      return None
+      months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                'August', 'September', 'October', 'November', 'December']
+      if month.capitalize() in months:
+          return month.capitalize()
+      else:
+          return None
 
 def valid_day(day):
     if day and day.isdigit():
@@ -113,13 +174,20 @@ class RotHandler(webapp2.RequestHandler):
             i = i + 1
         return "".join(output)
 
-class GreetingHandler(webapp2.RequestHandler):
+class SignupHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.out.write("fuck you chiga!")
+        self.response.out.write(header)
+        self.write_form()
+        self.response.out.write(footer)
 
+    def write_form(self, username="", password="", verify="", email=""):
+        self.response.out.write(signup_form % {"user_username" : "", 
+                                               "user_password" : "",
+                                               "user_verify" : "",
+                                               "user_email" : ""})
 
 app = webapp2.WSGIApplication([('/', MainPage), ('/thanks', ThanksHandler),
                                ('/unit2/rot13', RotHandler),
-                               ('/fuck', GreetingHandler)], debug=True)
+                               ('/unit2/signup', SignupHandler)], debug=True)
 
 
