@@ -1,5 +1,6 @@
 import webapp2
 import cgi
+import string
 
 form = """
 <form method = "post">
@@ -10,6 +11,12 @@ form = """
     <div style="color:red">%(error)s</div>
     <br>
     <br>
+    <input type="submit">
+</form>
+"""
+rot_form = """
+<form method="post">
+    <textarea name="text" style="height: 100px; width: 200px;">%(placeholder)s</textarea>
     <input type="submit">
 </form>
 """
@@ -65,9 +72,54 @@ class MainPage(webapp2.RequestHandler):
       self.redirect("/thanks")
 
 class ThanksHandler(webapp2.RequestHandler):
-  def get(self):
-      self.response.out.write("Thanks! Thats valid")
+    def get(self):
+        self.response.out.write("Thanks! Thats valid")
 
-app = webapp2.WSGIApplication([('/', MainPage), ('/thanks', ThanksHandler)], debug=True)
+class RotHandler(webapp2.RequestHandler):
+    def get(self):
+        self.response.out.write("<h1>Rot13</h1>")
+        self.response.out.write(rot_form % {"placeholder" : ""})
+
+    def post(self):
+        user_string = self.request.get("text")
+        converted_string = self.rot13(user_string) 
+        self.response.out.write(rot_form % {"placeholder" : converted_string})
+
+    def rot13(self, s):
+        alphabets = string.ascii_lowercase
+        i = 0
+        output = []
+        caps = False
+        while i < len(s):
+            if s[i].isupper():
+                caps = True
+                s_index = alphabets.find(s[i].lower())
+            else:
+                s_index = alphabets.find(s[i])
+            if s_index >= 0:
+                if s_index + 13 >= 26:
+                    if caps:
+                        output.append((alphabets[(s_index+13)%26]).upper())
+                    else:
+                        output.append(alphabets[(s_index+13)%26])
+                else:
+                    if caps:
+                        output.append((alphabets[s_index+13]).upper())
+                    else:
+                        output.append(alphabets[s_index+13])
+            else:
+                output.append(s[i])
+            caps = False
+            i = i + 1
+        return "".join(output)
+
+class GreetingHandler(webapp2.RequestHandler):
+    def get(self):
+        self.response.out.write("fuck you chiga!")
+
+
+app = webapp2.WSGIApplication([('/', MainPage), ('/thanks', ThanksHandler),
+                               ('/unit2/rot13', RotHandler),
+                               ('/fuck', GreetingHandler)], debug=True)
 
 
