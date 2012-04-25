@@ -30,6 +30,7 @@ header = """
     <link type="text/css" rel="stylesheet" href="/stylesheets/bootstrap.css" />
     <style>
         body { margin-top: 60px }
+        .error { color: red }
     </style>
 </head>
 <body>
@@ -41,11 +42,12 @@ header = """
             <span class="i-bar"></span>
             <span class="i-bar"></span>
           </a>
-          <a class="brand" href="/">Udacity-CS253</a>
+          <a class="brand" href="/">CS253</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="/unit2/signup">Signup</a></li>
+              <li><a href="/unit2/signup">Signup</a></li>
               <li><a href="/unit2/rot13">Rot13</a></li>
+              <li><a href="/about">About</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -135,7 +137,9 @@ class MainPage(webapp2.RequestHandler):
                                     "year" : year })
 
   def get(self):
+    self.response.out.write(header)
     self.write_form()
+    self.response.out.write(footer)
 
   def post(self):
     user_month = self.request.get('month')
@@ -147,26 +151,34 @@ class MainPage(webapp2.RequestHandler):
     year = valid_year(user_year)
 
     if not(day and month and year):
+      self.response.out.write(header)
       self.write_form(error="Invalid data! Please re-enter",
                       day = escape_html(user_day),
                       month = escape_html(user_month),
                       year = escape_html(user_year))
+      self.response.out.write(footer)
     else:
       self.redirect("/thanks")
 
 class ThanksHandler(webapp2.RequestHandler):
     def get(self):
+        self.response.out.write(header)
         self.response.out.write("Thanks! Thats valid")
+        self.response.out.write(footer)
 
 class RotHandler(webapp2.RequestHandler):
     def get(self):
+        self.response.out.write(header)
         self.response.out.write("<h1>Rot13</h1>")
         self.response.out.write(rot_form % {"placeholder" : ""})
+        self.response.out.write(footer)
 
     def post(self):
+        self.response.out.write(header)
         user_string = self.request.get("text")
         converted_string = self.rot13(user_string) 
         self.response.out.write(rot_form % {"placeholder" : escape_html(converted_string)})
+        self.response.out.write(footer)
 
     def rot13(self, s):
         alphabets = string.ascii_lowercase
@@ -213,10 +225,10 @@ class SignupHandler(webapp2.RequestHandler):
             return False
 
     def valid_verify(self, password, verify):
-        if password != verify:
-            return False
-        else:
+        if password == verify:
             return True
+        else:
+            return False
 
     def valid_email(self, email):
         if email == "":
@@ -257,14 +269,14 @@ class SignupHandler(webapp2.RequestHandler):
         error_verify = ""
         error_email = ""
 
-        if not(check_username and check_password and check_email):
+        if not(check_username and check_password and check_email and check_verify):
             # self.write_form(error="Invalid data! Please re-enter",
             #               day = cgi.escape(user_day, quote=True), 
             #               month = cgi.escape(user_month, quote=True),
             #               year = cgi.escape(user_year, quote=True))
             self.response.out.write(header)
             if not(check_username):
-                error_username = "This is not a valid username."
+                error_username = "That's not a valid username."
             if not(check_password):
                 error_password = "That wasn't a valid password."
             if not(check_verify):
@@ -284,10 +296,20 @@ class SignupHandler(webapp2.RequestHandler):
 class WelcomeHandler(webapp2.RequestHandler):
     def get(self):
         username = self.request.get("username")
-        self.response.out.write("<h1>Welcome, " + username + "</h1>")
+        self.response.out.write(header)
+        self.response.out.write("<h2>Welcome, " + username + "!</h2>")
+        self.response.out.write(footer)
+
+class AboutHandler(webapp2.RequestHandler):
+    def get(self):
+        self.response.out.write(header)
+        self.response.out.write("<p>Made as a part of CS253 - Web App Engg course on Udacity. Find the code on <a href='https://github.com/prakhar1989/CS253'>Github</a><p>")
+        self.response.out.write(footer)
+
 
 app = webapp2.WSGIApplication([('/', MainPage), 
                                ('/thanks', ThanksHandler),
+                               ('/about', AboutHandler),
                                ('/unit2/rot13', RotHandler),
                                ('/unit2/signup', SignupHandler),
                                ('/unit2/welcome', WelcomeHandler)], debug=True)
