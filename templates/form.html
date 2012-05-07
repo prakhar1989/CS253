@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<form method = "post">
+    What is your birthday?
+    <label>Month <input type="text" name="month" value={{month}}> </label>
+    <label>Day <input type="text" name="day" value={{day}}> </label>
+    <label>Year <input type="text" name="year" value={{year}}> </label>
+    <div style="color:red">{{error}}</div>
+    <br>
+    <br>
+    <input type="submit">
+</form>
+{% endblock %}
